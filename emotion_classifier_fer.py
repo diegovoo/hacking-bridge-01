@@ -14,6 +14,10 @@ def main():
     emotion_detector = FER(mtcnn=True) 
     print("Model loaded successfully!")
 
+    # --- NEW: Hardcoded User Variable ---
+    usuario_id = 0
+    # ------------------------------------
+
     # --- CSV SETUP ---
     # Create a unique filename based on the current date and time
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -23,8 +27,8 @@ def main():
     csv_file = open(csv_filename, mode='w', newline='')
     csv_writer = csv.writer(csv_file)
     
-    # Write the header row
-    csv_writer.writerow(["Timestamp", "Dominant_Emotion", "Confidence_Score"])
+    # Write the updated header row in Spanish
+    csv_writer.writerow(["Usuario", "TimeStamp", "Emocion", "Confianza_en_prediccion"])
     print(f"Logging data to: {csv_filename}")
     # -----------------
 
@@ -63,8 +67,8 @@ def main():
             # --- CSV LOGGING ---
             # Grab the current time down to the millisecond
             current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-            # Write the exact time, the emotion, and the score to the file
-            csv_writer.writerow([current_time, top_emotion, top_score])
+            # Write the hardcoded User ID, exact time, emotion, and score to the file
+            csv_writer.writerow([usuario_id, current_time, top_emotion, top_score])
             # -------------------
 
             # 3. Draw a rectangle around the detected face
