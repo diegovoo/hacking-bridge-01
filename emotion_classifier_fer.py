@@ -1,5 +1,6 @@
 import cv2
 import csv
+import os
 from datetime import datetime
 from fer.fer import FER
 import warnings
@@ -8,29 +9,39 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def main():
-    print("Initializing FER (Facial Expression Recognition)...")
+    # --- NEW: User Input Prompt ---
+    # We ask for the name before loading the heavy AI model so the user doesn't have to wait
+    usuario_id = input("Ingrese el nombre del usuario (Enter user name): ").strip()
     
-    # Initialize the detector. 
+    # Fallback just in case the user hits Enter without typing a name
+    if not usuario_id:
+        usuario_id = "Desconocido"
+        
+    csv_filename = f"{usuario_id}.csv"
+    # ------------------------------
+
+    print("Initializing FER (Facial Expression Recognition)...")
     emotion_detector = FER(mtcnn=True) 
     print("Model loaded successfully!")
 
-    # --- NEW: Hardcoded User Variable ---
-    usuario_id = 0
-    # ------------------------------------
-
-    # --- CSV SETUP ---
-    # Create a unique filename based on the current date and time
-    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_filename = f"emotion_log_{timestamp_str}.csv"
+    # --- CSV SETUP WITH APPEND LOGIC ---
+    # Check if the file already exists in the directory
+    file_exists = os.path.isfile(csv_filename)
     
-    # Open the file in write mode and create a CSV writer object
-    csv_file = open(csv_filename, mode='w', newline='')
+    # Use 'a' (append) if it exists, otherwise 'w' (write)
+    mode = 'a' if file_exists else 'w'
+    
+    csv_file = open(csv_filename, mode=mode, newline='')
     csv_writer = csv.writer(csv_file)
     
-    # Write the updated header row in Spanish
-    csv_writer.writerow(["Usuario", "TimeStamp", "Emocion", "Confianza_en_prediccion"])
-    print(f"Logging data to: {csv_filename}")
-    # -----------------
+    if not file_exists:
+        # File is new, so we write the headers
+        csv_writer.writerow(["Usuario", "TimeStamp", "Emocion", "Confianza_en_prediccion"])
+        print(f"Created new log file: {csv_filename}")
+    else:
+        # File exists, skip headers and just append
+        print(f"Found existing log. Appending data to: {csv_filename}")
+    # -----------------------------------
 
     # Start video capture
     cap = cv2.VideoCapture(0)
@@ -58,16 +69,10 @@ def main():
             top_emotion = max(emotions, key=emotions.get)
             top_score = emotions[top_emotion]
 
-            # --- OPTIONAL: Thresholding Fix ---
-            # if top_emotion == 'fear' and top_score < 0.70:
-            #     top_emotion = 'neutral'
-            #     top_score = emotions['neutral']
-            # ----------------------------------
-
             # --- CSV LOGGING ---
             # Grab the current time down to the millisecond
             current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-            # Write the hardcoded User ID, exact time, emotion, and score to the file
+            # Write the dynamic User ID, exact time, emotion, and score to the file
             csv_writer.writerow([usuario_id, current_time, top_emotion, top_score])
             # -------------------
 
@@ -95,7 +100,7 @@ def main():
     
     # Close the CSV file safely
     csv_file.close()
-    print(f"Session saved. Data written to {csv_filename}")
+    print(f"Session saved. Data securely written to {csv_filename}")
 
 if __name__ == "__main__":
     main()

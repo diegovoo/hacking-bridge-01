@@ -1,6 +1,6 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import argparse
 import sys
 
@@ -17,66 +17,72 @@ def main():
         print(f"Error reading the CSV file: {e}")
         sys.exit(1)
 
-    # Convert TimeStamp to datetime objects (Updated header)
+    # Convert TimeStamp to datetime objects
     df['TimeStamp'] = pd.to_datetime(df['TimeStamp'])
+    
+    # Sort the dataframe by time and reset the index. 
+    # This guarantees that appended sessions plot smoothly from left to right.
+    df = df.sort_values('TimeStamp').reset_index(drop=True)
 
     # Define a fixed logical order for the Y-axis
     emotion_order = ['angry', 'disgust', 'fear', 'sad', 'neutral', 'surprise', 'happy']
-    # Updated header: Emocion
     df['Emocion'] = pd.Categorical(df['Emocion'], categories=emotion_order, ordered=True)
 
-    # Extract the User ID for the title (defaults to 'Desconocido' if empty)
+    # Extract the User ID for the title
     usuario_id = df['Usuario'].iloc[0] if not df.empty else "Desconocido"
 
     # --- CREATE THE CLINICAL DASHBOARD ---
-    # We create a figure with 2 subplots that share the exact same X-axis (Time)
     fig, (ax1, ax2) = plt.subplots(
         nrows=2, 
         ncols=1, 
         figsize=(14, 8), 
         sharex=True, 
-        gridspec_kw={'height_ratios': [2, 1]} # The top graph gets more vertical space
+        gridspec_kw={'height_ratios': [2, 1]} 
     )
 
-    # Added the Usuario ID to the main title and translated to Spanish
     fig.suptitle(f'Panel de Verificación Clínica de Emociones - Usuario: {usuario_id}', fontsize=16, fontweight='bold', y=0.95)
 
-    # --- TOP PLOT: Emotion Timeline ---
-    # We use a scatter plot, but color-coded by the emotion itself for clinical clarity
     colors = {'angry': 'red', 'disgust': 'saddlebrown', 'fear': 'purple', 
               'sad': 'blue', 'neutral': 'gray', 'surprise': 'orange', 'happy': 'green'}
-    
-    # Map the colors to the dataframe (Updated header)
     df['Color'] = df['Emocion'].map(colors)
 
-    # Scatter plot using the new headers
-    ax1.scatter(df['TimeStamp'], df['Emocion'], c=df['Color'], alpha=0.7, s=40)
+    # --- NEW: Sequential X-Axis Logic ---
+    # We use the dataframe index (0, 1, 2...) instead of the TimeStamp for the X geometry.
+    x_sequence = df.index
+
+    # --- TOP PLOT: Emotion Timeline ---
+    ax1.scatter(x_sequence, df['Emocion'], c=df['Color'], alpha=0.7, s=40)
     ax1.set_ylabel('Emoción Dominante', fontsize=12, fontweight='bold')
     ax1.grid(True, axis='y', linestyle='--', alpha=0.5)
     ax1.set_title('Línea de Tiempo del Estado Emocional', loc='left', fontsize=12)
 
     # --- BOTTOM PLOT: Confidence Score Tracker ---
-    # Area chart using the new Confianza_en_prediccion header
-    ax2.plot(df['TimeStamp'], df['Confianza_en_prediccion'], color='black', linewidth=1)
-    ax2.fill_between(df['TimeStamp'], df['Confianza_en_prediccion'], 0, color='lightgray', alpha=0.5)
+    ax2.plot(x_sequence, df['Confianza_en_prediccion'], color='black', linewidth=1)
+    ax2.fill_between(x_sequence, df['Confianza_en_prediccion'], 0, color='lightgray', alpha=0.5)
     
     ax2.set_ylabel('Confianza del Modelo', fontsize=12, fontweight='bold')
-    ax2.set_xlabel('Tiempo de Sesión (HH:MM:SS)', fontsize=12)
-    ax2.set_ylim(0, 1.05) # Keep the Y-axis strictly between 0 and 100%
+    ax2.set_xlabel('Tiempo de Sesión', fontsize=12)
+    ax2.set_ylim(0, 1.05) 
     ax2.grid(True, axis='y', linestyle='--', alpha=0.5)
     ax2.set_title('Certeza de Predicción (0.0 a 1.0)', loc='left', fontsize=12)
-
-    # Add a clinical "low confidence" warning line at 0.5 (50%)
     ax2.axhline(y=0.5, color='red', linestyle=':', label='Umbral del 50%')
     ax2.legend(loc='lower right')
 
-    # --- FORMATTING ---
-    # Format the X-axis for clean time reading
-    ax2.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
-    fig.autofmt_xdate()
+    # --- FORMATTING: Custom X-Axis Labels ---
+    # Pick a maximum of 10 evenly spaced spots across the graph to place a timestamp label.
+    # This prevents the text from overlapping into a black blur.
+    num_ticks = min(10, len(df))
+    if num_ticks > 0:
+        tick_positions = np.linspace(0, len(df) - 1, num_ticks, dtype=int)
+        tick_labels = df['TimeStamp'].iloc[tick_positions].dt.strftime('%H:%M:%S')
+        
+        ax2.set_xticks(tick_positions)
+        ax2.set_xticklabels(tick_labels)
+
+    fig.autofmt_xdate() # Rotates the new timestamp labels slightly for readability
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.88) # Adjust spacing so the title isn't cut off
+    plt.subplots_adjust(top=0.88) 
     
     print("Dashboard generated successfully.")
     plt.show()
