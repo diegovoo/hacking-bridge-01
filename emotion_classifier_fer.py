@@ -1,4 +1,6 @@
 import cv2
+import csv
+from datetime import datetime
 from fer.fer import FER
 import warnings
 
@@ -9,10 +11,22 @@ def main():
     print("Initializing FER (Facial Expression Recognition)...")
     
     # Initialize the detector. 
-    # mtcnn=True tells the library to use the more robust MTCNN face detector 
-    # instead of the default Haar Cascades.
     emotion_detector = FER(mtcnn=True) 
     print("Model loaded successfully!")
+
+    # --- CSV SETUP ---
+    # Create a unique filename based on the current date and time
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_filename = f"emotion_log_{timestamp_str}.csv"
+    
+    # Open the file in write mode and create a CSV writer object
+    csv_file = open(csv_filename, mode='w', newline='')
+    csv_writer = csv.writer(csv_file)
+    
+    # Write the header row
+    csv_writer.writerow(["Timestamp", "Dominant_Emotion", "Confidence_Score"])
+    print(f"Logging data to: {csv_filename}")
+    # -----------------
 
     # Start video capture
     cap = cv2.VideoCapture(0)
@@ -28,8 +42,7 @@ def main():
             print("Error: Could not read frame from webcam.")
             break
 
-        # detect_emotions analyzes the frame and returns a list of dictionaries.
-        # Format: [{'box': (x, y, w, h), 'emotions': {'angry': 0.1, 'happy': 0.8...}}]
+        # detect_emotions analyzes the frame
         results = emotion_detector.detect_emotions(frame)
 
         for face in results:
@@ -42,11 +55,17 @@ def main():
             top_score = emotions[top_emotion]
 
             # --- OPTIONAL: Thresholding Fix ---
-            # Uncomment the lines below if it still confuses 'neutral' and 'fear'.
             # if top_emotion == 'fear' and top_score < 0.70:
             #     top_emotion = 'neutral'
             #     top_score = emotions['neutral']
             # ----------------------------------
+
+            # --- CSV LOGGING ---
+            # Grab the current time down to the millisecond
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            # Write the exact time, the emotion, and the score to the file
+            csv_writer.writerow([current_time, top_emotion, top_score])
+            # -------------------
 
             # 3. Draw a rectangle around the detected face
             cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
@@ -69,6 +88,10 @@ def main():
     # Release resources cleanly
     cap.release()
     cv2.destroyAllWindows()
+    
+    # Close the CSV file safely
+    csv_file.close()
+    print(f"Session saved. Data written to {csv_filename}")
 
 if __name__ == "__main__":
     main()
