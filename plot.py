@@ -1,6 +1,6 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import argparse
 import sys
 
@@ -21,21 +21,30 @@ def main():
         print(f"Error reading the CSV file: {e}")
         sys.exit(1)
 
-    # Verify the CSV has the expected columns
-    expected_columns = ["Timestamp", "Dominant_Emotion", "Confidence_Score"]
+    # Verify the CSV has the new expected columns
+    expected_columns = ["Usuario", "TimeStamp", "Emocion", "Confianza_en_prediccion"]
     if not all(col in df.columns for col in expected_columns):
         print(f"Error: The CSV must contain the following columns: {expected_columns}")
         sys.exit(1)
 
-    # Convert the Timestamp column to actual datetime objects
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+    # Convert the TimeStamp column to actual datetime objects
+    df['TimeStamp'] = pd.to_datetime(df['TimeStamp'])
+
+    # --- SPACETIME FIX ---
+    # Sort by time and use a sequential index to remove visual gaps between sessions
+    df = df.sort_values('TimeStamp').reset_index(drop=True)
+    x_sequence = df.index
+    # ---------------------
+
+    # Extract user ID
+    usuario_id = df['Usuario'].iloc[0] if not df.empty else "Desconocido"
 
     # Define a fixed logical order for the Y-axis so the graph is always consistent
     emotion_order = ['angry', 'disgust', 'fear', 'sad', 'neutral', 'surprise', 'happy']
     
     # Convert the emotion column to a categorical type enforcing our order
-    df['Dominant_Emotion'] = pd.Categorical(
-        df['Dominant_Emotion'], 
+    df['Emocion'] = pd.Categorical(
+        df['Emocion'], 
         categories=emotion_order, 
         ordered=True
     )
@@ -44,28 +53,35 @@ def main():
     plt.figure(figsize=(12, 6))
 
     # Create a scatter plot
-    # X = Time, Y = Emotion, Color = Confidence Score
+    # X = Sequence, Y = Emocion, Color = Confianza_en_prediccion
     scatter = plt.scatter(
-        df['Timestamp'], 
-        df['Dominant_Emotion'], 
-        c=df['Confidence_Score'], 
+        x_sequence, 
+        df['Emocion'], 
+        c=df['Confianza_en_prediccion'], 
         cmap='viridis', # A color map ranging from purple (low) to yellow (high)
         alpha=0.8, 
         s=60 # Size of the dots
     )
 
     # Format the graph's appearance
-    plt.title('Facial Emotion Timeline', fontsize=16, pad=15)
-    plt.xlabel('Time', fontsize=12)
-    plt.ylabel('Detected Emotion', fontsize=12)
+    plt.title(f'Línea de Tiempo de Emociones - Usuario: {usuario_id}', fontsize=16, pad=15)
+    plt.xlabel('Tiempo de Sesión', fontsize=12)
+    plt.ylabel('Emoción Detectada', fontsize=12)
 
-    # Format the X-axis to display timestamps cleanly (Hours:Minutes:Seconds)
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
+    # --- CUSTOM X-AXIS LABELS ---
+    # Evenly distribute max 10 time labels across the sequence to prevent overlap
+    num_ticks = min(10, len(df))
+    if num_ticks > 0:
+        tick_positions = np.linspace(0, len(df) - 1, num_ticks, dtype=int)
+        tick_labels = df['TimeStamp'].iloc[tick_positions].dt.strftime('%H:%M:%S')
+        
+        plt.xticks(tick_positions, tick_labels)
+
     plt.gcf().autofmt_xdate() # Rotates the dates slightly so they don't overlap
 
     # Add a colorbar to explain the confidence score colors
     cbar = plt.colorbar(scatter)
-    cbar.set_label('Model Confidence Score (0.0 to 1.0)', rotation=270, labelpad=20)
+    cbar.set_label('Confianza del Modelo (0.0 a 1.0)', rotation=270, labelpad=20)
 
     # Add horizontal grid lines to make tracking emotions easier
     plt.grid(True, axis='y', linestyle='--', alpha=0.6)
