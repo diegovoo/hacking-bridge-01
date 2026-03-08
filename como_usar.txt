@@ -1,0 +1,5 @@
+// crear conda env que se llame hacking-bridge
+conda env create -f environment.yml
+
+// ejecutar este script cambiando el path hasta el fichero 'app.py'
+DUMMY_EMAIL="" conda run -n hacking-bridge streamlit run [PATH_hasta]/app.py --browser.gatherUsageStats=false

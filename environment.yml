@@ -1,0 +1,6 @@
+name: hacking-bridge
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+prefix: /opt/miniforge3/envs/hacking-bridge
