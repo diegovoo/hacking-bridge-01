@@ -4,7 +4,7 @@ import numpy as np
 import textwrap
 import os
 
-def visualize_for_presentation(csv_path='resultados_emociones.csv', max_chars=120, umbral=0.05):
+def visualize_for_presentation(csv_path='resultados_emociones.csv', max_chars=120, umbral=0.05, show_plot=True):
     """
     Lee el archivo de resultados_emociones.csv y genera un gráfico de barras
     altamente visual y estético, diseñado específicamente para ser incluido 
@@ -112,9 +112,10 @@ def visualize_for_presentation(csv_path='resultados_emociones.csv', max_chars=12
     print(f"\n✅ Gráfico guardado en alta resolución como: {output_img}")
     print("Ideal para insertar directamente en PowerPoint o Canva.")
     
-    # Mostrar el gráfico por pantalla
-    print("Mostrando gráfico en pantalla. Cierra la ventana emergente para continuar...")
-    plt.show()
+    if show_plot:
+        # Mostrar el gráfico por pantalla
+        print("Mostrando gráfico en pantalla. Cierra la ventana emergente para continuar...")
+        plt.show()
 
 if __name__ == "__main__":
     visualize_for_presentation()

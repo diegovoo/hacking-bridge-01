@@ -8,9 +8,16 @@ import warnings
 # Suppress standard warnings for a cleaner terminal output
 warnings.filterwarnings("ignore")
 
+import sys
+
 def main():
     # --- User Input Prompt ---
-    usuario_id = input("Ingrese el nombre del usuario (Enter user name): ").strip()
+    # First, check if user name is provided via command-line arguments
+    if len(sys.argv) > 1:
+        usuario_id = sys.argv[1].strip()
+    else:
+        usuario_id = input("Ingrese el nombre del usuario (Enter user name): ").strip()
+        
     if not usuario_id:
         usuario_id = "Desconocido"
         
