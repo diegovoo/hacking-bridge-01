@@ -8,6 +8,10 @@
   [![FER](https://img.shields.io/badge/Computer_Vision-FER-green.svg)]()
 </div>
 
+## 🎥 Demo del Analizador Textual
+
+![Demo Analizando Texto y Emociones](demo-analisis.webp)
+
 ## 📖 Sobre el Proyecto
 
 Este repositorio fue desarrollado como solución algorítmica y visual para la **hackathon de Hacking Bridge**. 
