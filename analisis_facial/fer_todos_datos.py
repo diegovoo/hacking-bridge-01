@@ -47,11 +47,21 @@ def main():
     # -------------------------
 
     # Start video capture (using your external camera index)
-    cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+    # Using default API for Windows compatibility (avoiding CAP_V4L2 which is Linux specific)
+    cap = cv2.VideoCapture(0)
 
-    print("Starting webcam feed... Press 'q' to quit.")
+    print("Starting webcam feed... Press 'q' to quit or use the Stop button in the UI.")
 
     while True:
+        # Check if Streamlit UI sent a stop signal
+        if os.path.exists("stop_camera.txt"):
+            print("Deteniendo cámara por señal de la interfaz...")
+            try:
+                os.remove("stop_camera.txt")
+            except Exception:
+                pass
+            break
+
         ret, frame = cap.read()
         if not ret:
             print("Error: Could not read frame from webcam.")

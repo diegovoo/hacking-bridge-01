@@ -38,7 +38,20 @@ with tab1:
     with col_f1:
         patient_id = st.text_input("Identificador del Paciente/Sesión:", placeholder="Ej: Sujeto_001")
         
-    start_facial_btn = st.button("▶️ Iniciar Cámara y Análisis", type="primary")
+    col_btn1, col_btn2 = st.columns(2)
+    with col_btn1:
+        start_facial_btn = st.button("▶️ Iniciar Cámara y Análisis", type="primary", use_container_width=True)
+    with col_btn2:
+        stop_facial_btn = st.button("⏹️ Detener Cámara", type="secondary", use_container_width=True)
+        
+    if stop_facial_btn:
+        stop_file_path = os.path.join(os.getcwd(), 'analisis_facial', 'stop_camera.txt')
+        try:
+            with open(stop_file_path, "w") as f:
+                f.write("stop")
+            st.success("Señal de detención enviada. La ventana de la cámara se cerrará en breve.")
+        except Exception as e:
+            st.error(f"Error al enviar señal: {e}")
     
     if start_facial_btn:
         if not patient_id:
@@ -46,11 +59,19 @@ with tab1:
         else:
             facial_script_path = os.path.join(os.getcwd(), 'analisis_facial', 'fer_todos_datos.py')
             
+            # Remove any potentially leftover stop signal
+            stop_file_path = os.path.join(os.getcwd(), 'analisis_facial', 'stop_camera.txt')
+            if os.path.exists(stop_file_path):
+                try:
+                    os.remove(stop_file_path)
+                except Exception:
+                    pass
+            
             if not os.path.exists(facial_script_path):
                 st.error(f"No se pudo encontrar el script de análisis facial en: `{facial_script_path}`")
             else:
                 st.success(f"Iniciando análisis para el paciente: **{patient_id}**. Se abrirá una nueva ventana con la cámara.")
-                st.warning("⚠️ **Para detener la grabación, selecciona la ventana de la cámara y presiona la tecla 'q'.**")
+                st.info("ℹ️ **Puedes detener la grabación usando el botón 'Detener Cámara' o presionando 'q' en la ventana de video.**")
                 
                 # Launch the script using subprocess in its own directory
                 try:

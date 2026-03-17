@@ -3,4 +3,17 @@ channels:
   - conda-forge
 dependencies:
   - python=3.11
-prefix: /opt/miniforge3/envs/hacking-bridge
+  - pip
+  - pip:
+    - streamlit
+    - pillow
+    - opencv-python
+    - fer
+    - pandas
+    - numpy
+    - matplotlib
+    - transformers
+    - torch
+    - deep-translator
+    - tensorflow
+    - tf-keras
